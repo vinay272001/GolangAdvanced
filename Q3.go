@@ -12,22 +12,45 @@
 //                            ……..
 //                            {Rizwana, 33}
 
-//  Fix deadlock error in the below program :
-            
-// func main() {
-//    ch := make(chan int)
 
+package main
 
-//    go func() {
-//        for i := 0; i < 500; i++ {
-//            ch <- i
-//        }
-//    }()
+import (
+	"fmt"
+	"sync"
+)
 
+type employee struct {
+	name string
+	age  int
+}
 
-//    for i := range ch {
-//        fmt.Println(i)
-//    }
+func response(s employee, wg *sync.WaitGroup) {
+	fmt.Println(s.name, " ", s.age)
+	wg.Done()
+}
 
+func process(s employee, ch chan employee, wg *sync.WaitGroup) {
+	ch <- s
+	wg.Done()
+}
+func main() {
+	name := "Employee 1"
+	var wg sync.WaitGroup
 
-// }
+	ch := make(chan employee, 5)
+	
+	for i := 0; i < 10; i = i + 1 {
+		s := employee{
+			name: name,
+			age:  i,
+		}
+		wg.Add(1)
+		go process(s, ch, &wg)
+
+		wg.Add(1)
+		go response(<-ch, &wg)
+	}
+
+	wg.Wait()
+}
